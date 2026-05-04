@@ -196,8 +196,6 @@ To switch back to standard SQLite:
 
 ## Windows
 
-Windows support is currently experimental.
-
 When SQLCipher is enabled, the Windows library project stages the `openssl-native`
 runtime DLLs for packaging. If your workspace layout is unusual, you can override
 Windows SQLCipher mode explicitly in `windows/ExperimentalFeatures.props`:
