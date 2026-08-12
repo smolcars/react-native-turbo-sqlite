@@ -32,9 +32,7 @@ import TurboSqlite from "react-native-turbo-sqlite";
 import { DocumentDirectoryPath } from "@dr.pogodin/react-native-fs";
 
 // Open the database
-const db = TurboSqlite.openDatabase(
-  DocumentDirectoryPath + "/test.db"
-);
+const db = TurboSqlite.openDatabase(DocumentDirectoryPath + "/test.db");
 
 // Create a table
 const createTableResult = db.executeSql(
@@ -45,8 +43,8 @@ console.log("Create table result:", createTableResult);
 
 // Insert some data
 const insertResult = db.executeSql(
-    "INSERT INTO users (name, age) VALUES (?, ?)",
-    ["Alice", 30]
+  "INSERT INTO users (name, age) VALUES (?, ?)",
+  ["Alice", 30]
 );
 console.log("Insert result:", insertResult);
 
@@ -55,10 +53,7 @@ const selectResult = db.executeSql("SELECT * FROM users", []);
 console.log("Select result:", selectResult);
 
 // You can also run a query async
-const asyncSelectResult = await db.executeSqlAsync(
-  "SELECT * FROM users",
-  []
-);
+const asyncSelectResult = await db.executeSqlAsync("SELECT * FROM users", []);
 console.log("Async select result:", asyncSelectResult);
 ```
 
@@ -90,12 +85,51 @@ with [OPFS](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Ori
 - For non-persistent tests and mocks, use `react-native-turbo-sqlite/mocks`
   (which uses `sql.js`).
 
-You must also serve the required headers for the sqlite-wasm worker/OPFS setup:
+All web setups must serve the required headers for the sqlite-wasm worker/OPFS
+setup:
 
 - `Cross-Origin-Opener-Policy: same-origin`
 - `Cross-Origin-Embedder-Policy: require-corp`
 
-The Vite example under `example/` is configured this way already.
+### Web Bundlers
+
+Vite, Webpack, and other browser bundlers use the package's browser entry,
+which creates a module worker and lets the bundler emit the sqlite worker, OPFS
+proxy, and WASM assets. No manual sqlite asset copying is required when those
+assets are handled by the bundler.
+
+If your Webpack setup transpiles package internals, do not run Babel over
+`react-native-turbo-sqlite`'s vendored `sqlite-wasm` worker assets. They are
+loaded by the sqlite worker runtime and must stay browser-compatible; do not
+transform them to CommonJS.
+
+The Vite and Webpack examples under `example/` are configured this way already.
+
+### Metro Web / Expo Web
+
+Metro should resolve the package's React Native entry with the `web` platform,
+which selects the package's `index.web` build. It does not emit the sqlite
+assets the same way as Vite/Webpack.
+
+Serve these files from the installed package:
+
+- `src/vendor/sqlite-wasm/sqlite3-worker1.mjs`
+- `src/vendor/sqlite-wasm/sqlite3-opfs-async-proxy.js`
+- `src/vendor/sqlite-wasm/sqlite3.wasm`
+- `src/sqlite-wasm-helpers/sqlite3-worker.metro-web.js`
+
+By default, the Metro web runtime requests them at these URLs:
+
+- `/vendor/sqlite-wasm/sqlite3-worker1.mjs`
+- `/vendor/sqlite-wasm/sqlite3-opfs-async-proxy.js`
+- `/vendor/sqlite-wasm/sqlite3.wasm`
+- `/vendor/sqlite-wasm/sqlite3-worker.metro-web.js`
+
+If you serve the assets from a different path, set
+`globalThis.__RNTurboSqliteAssetBaseUrl` and optionally
+`globalThis.__RNTurboSqliteWorkerUrl` before opening a database.
+
+The Metro web example under `example/` is configured this way already.
 
 ## Encryption Support (SQLCipher)
 
@@ -135,7 +169,10 @@ const db = TurboSqlite.openDatabase(
 );
 
 // Use the database normally
-db.executeSql("CREATE TABLE IF NOT EXISTS secrets (id INTEGER PRIMARY KEY, data TEXT)", []);
+db.executeSql(
+  "CREATE TABLE IF NOT EXISTS secrets (id INTEGER PRIMARY KEY, data TEXT)",
+  []
+);
 ```
 
 ### Important Notes
@@ -178,6 +215,7 @@ dependencies {
 ```
 
 **Notes:**
+
 - The OpenSSL version 3.3.3 is recommended (matches SQLCipher's requirements)
 - Prefab is Android's modern system for native dependencies
 - This will add ~6-7 MB to your APK (all architectures) or ~2-3 MB per architecture with APK splits

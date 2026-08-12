@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import NativeExampleAppPaths from "./turbomodules/NativeExampleAppPaths";
-import TurboSqlite, { type Database } from "../../src";
+import TurboSqlite, { type Database } from "react-native-turbo-sqlite";
 
 const getDatabasePath = (encrypted: boolean): string => {
   const directory = NativeExampleAppPaths.getDatabaseDirectory();

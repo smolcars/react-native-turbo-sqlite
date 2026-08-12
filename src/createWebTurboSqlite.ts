@@ -6,11 +6,7 @@ import type {
   SqlResult,
   TurboSqliteModule,
 } from "./TurboSqliteTypes";
-import { createBlobSqliteWorker } from "./sqlite-wasm-helpers/createBlobSqliteWorker";
-import {
-  sqlite3Worker1Promiser,
-  type Worker1Promiser,
-} from "./sqlite-wasm-helpers/sqlite3Worker1Promiser";
+import type { Worker1Promiser } from "./sqlite-wasm-helpers/sqlite3Worker1Promiser";
 
 type ConfigGetResult = {
   version?: {
@@ -70,15 +66,6 @@ function getWebOpfsErrorMessage(): string {
     "This app can't open a persistent database because the browser storage backend could not be initialized.",
     "If persistence should work here, verify that COOP/COEP headers are enabled and that the current browser fully supports OPFS sync access handles.",
   ].join(" ");
-}
-
-let promiserPromise: Promise<Worker1Promiser> | null = null;
-let configPromise: Promise<ConfigGetResult> | null = null;
-
-async function createWorkerPromiser(): Promise<Worker1Promiser> {
-  return sqlite3Worker1Promiser({
-    worker: createBlobSqliteWorker,
-  });
 }
 
 function unsupportedSyncApi(methodName: string): never {
@@ -171,25 +158,16 @@ function normalizeParams(params: Params): Array<string | number | null> {
   });
 }
 
-async function getPromiser(): Promise<Worker1Promiser> {
-  promiserPromise ??= createWorkerPromiser();
-  return promiserPromise;
-}
-
 async function assertOpfsAvailable(promiser: Worker1Promiser): Promise<void> {
-  configPromise ??= (async () => {
-    const response = (await callPromiser<{ result?: ConfigGetResult }>(
-      promiser,
-      "config-get",
-      {}
-    )) as {
-      result?: ConfigGetResult;
-    };
+  const response = (await callPromiser<{ result?: ConfigGetResult }>(
+    promiser,
+    "config-get",
+    {}
+  )) as {
+    result?: ConfigGetResult;
+  };
 
-    return response.result ?? {};
-  })();
-
-  const config = await configPromise;
+  const config = response.result ?? {};
   if (!config.vfsList?.includes("opfs")) {
     throw new Error(getWebOpfsErrorMessage());
   }
@@ -296,14 +274,14 @@ function createWebDatabase(promiser: Worker1Promiser, dbId: string): Database {
         resultRows: [],
         countChanges: true,
         lastInsertRowId: true,
-      } as any;
+      } as const;
 
       const response = (await callPromiser<{ result?: WorkerExecResult }>(
         promiser,
         {
           type: "exec",
           dbId,
-          args: execArgs,
+          args: execArgs as unknown as Record<string, unknown>,
         }
       )) as { result?: WorkerExecResult };
 
@@ -345,52 +323,65 @@ function createWebDatabase(promiser: Worker1Promiser, dbId: string): Database {
   return database;
 }
 
-const TurboSqlite: TurboSqliteModule = {
-  openDatabase(): Database {
-    return unsupportedSyncApi("TurboSqlite.openDatabase");
-  },
+export function createWebTurboSqlite(
+  createPromiser: () => Promise<Worker1Promiser>
+): TurboSqliteModule {
+  let promiserPromise: Promise<Worker1Promiser> | null = null;
+  let configPromise: Promise<void> | null = null;
 
-  async openDatabaseAsync(
-    path: string,
-    encryptionKey?: string
-  ): Promise<Database> {
-    if (encryptionKey) {
-      throw new Error(`TurboSqlite.openDatabaseAsync: ${WEB_SQLCIPHER_ERROR}`);
-    }
+  async function getPromiser(): Promise<Worker1Promiser> {
+    promiserPromise ??= createPromiser();
+    return promiserPromise;
+  }
 
-    const promiser = await getPromiser();
-    const openArgs = toWebOpenArgs(path);
-    const needsOpfs = openArgs.vfs === "opfs";
+  return {
+    openDatabase(): Database {
+      return unsupportedSyncApi("TurboSqlite.openDatabase");
+    },
 
-    if (needsOpfs) {
-      await assertOpfsAvailable(promiser);
-    }
+    async openDatabaseAsync(
+      path: string,
+      encryptionKey?: string
+    ): Promise<Database> {
+      if (encryptionKey) {
+        throw new Error(
+          `TurboSqlite.openDatabaseAsync: ${WEB_SQLCIPHER_ERROR}`
+        );
+      }
 
-    const response = (await callPromiser<{ result?: OpenResult }>(
-      promiser,
-      "open",
-      openArgs
-    )) as { result?: OpenResult };
+      const promiser = await getPromiser();
+      const openArgs = toWebOpenArgs(path);
+      const needsOpfs = openArgs.vfs === "opfs";
 
-    if (!response.result?.dbId) {
-      throw new Error("Failed to open web database");
-    }
+      if (needsOpfs) {
+        configPromise ??= assertOpfsAvailable(promiser);
+        await configPromise;
+      }
 
-    if (needsOpfs && !response.result.persistent) {
-      await callPromiser<void>(promiser, {
-        type: "close",
-        dbId: response.result.dbId,
-        args: {},
-      });
-      throw new Error(getWebOpfsErrorMessage());
-    }
+      const response = (await callPromiser<{ result?: OpenResult }>(
+        promiser,
+        "open",
+        openArgs as unknown as Record<string, unknown>
+      )) as { result?: OpenResult };
 
-    return createWebDatabase(promiser, response.result.dbId);
-  },
+      if (!response.result?.dbId) {
+        throw new Error("Failed to open web database");
+      }
 
-  getVersionString(): string {
-    return unsupportedSyncApi("TurboSqlite.getVersionString");
-  },
-};
+      if (needsOpfs && !response.result.persistent) {
+        await callPromiser<void>(promiser, {
+          type: "close",
+          dbId: response.result.dbId,
+          args: {},
+        });
+        throw new Error(getWebOpfsErrorMessage());
+      }
 
-export default TurboSqlite;
+      return createWebDatabase(promiser, response.result.dbId);
+    },
+
+    getVersionString(): string {
+      return unsupportedSyncApi("TurboSqlite.getVersionString");
+    },
+  };
+}

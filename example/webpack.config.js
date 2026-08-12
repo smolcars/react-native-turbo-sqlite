@@ -15,6 +15,12 @@ module.exports = {
   resolve: {
     alias: {
       "react-native$": "react-native-web",
+      // Example-only: test local source instead of stale/missing built output.
+      "react-native-turbo-sqlite": path.join(
+        repoRoot,
+        "src",
+        "index.browser.ts"
+      ),
     },
     extensions: [
       ".web.tsx",
@@ -33,6 +39,7 @@ module.exports = {
       {
         test: /\.[jt]sx?$/,
         include: [root, path.join(repoRoot, "src")],
+        exclude: [path.join(repoRoot, "src", "vendor")],
         use: {
           loader: "babel-loader",
           options: {

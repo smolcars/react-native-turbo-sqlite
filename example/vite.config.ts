@@ -21,6 +21,12 @@ export default defineConfig({
     ],
     alias: {
       "react-native": "react-native-web",
+      // Example-only: test local source instead of stale/missing built output.
+      "react-native-turbo-sqlite": path.join(
+        repoRoot,
+        "src",
+        "index.browser.ts"
+      ),
     },
   },
   server: {

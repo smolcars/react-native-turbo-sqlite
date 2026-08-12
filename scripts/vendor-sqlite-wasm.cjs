@@ -2,8 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Copies sqlite-wasm dist assets into src/vendor/sqlite-wasm and applies the
-// small compatibility patches required by this package's browser and Metro
-// worker bootstraps.
+// small compatibility patches required by this package's worker bootstraps.
 
 const rootDir = path.resolve(__dirname, "..");
 const defaultSourceDir = path.resolve(
@@ -51,68 +50,13 @@ function removeExact(content, find, fileLabel) {
   return content.replace(find, "");
 }
 
-function writeBase64Module(filePath, exportName, sourcePath) {
-  const base64 = fs.readFileSync(sourcePath).toString("base64");
-  writeUtf8(
-    filePath,
-    `const ${exportName} = "${base64}";\n\nexport default ${exportName};\n`
-  );
-}
-
-function patchIndexMjs() {
-  const filePath = path.join(targetDir, "index.mjs");
-  let content = readUtf8(filePath);
-
-  content = replaceExact(
-    content,
-    'return new Worker(new URL("sqlite3-worker1.mjs", import.meta.url), { type: "module" });',
-    'return new Worker(new URL("./sqlite3-worker1.mjs", (globalThis?.document?.currentScript?.src || globalThis?.location?.href || "")));',
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    "var _scriptName = import.meta.url;",
-    'var _scriptName = (globalThis?.document?.currentScript?.src || globalThis?.location?.href || "");',
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    "var wasmBinary;",
-    'var wasmBinary = Module["wasmBinary"];',
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    "if (file == wasmBinaryFile && wasmBinary) return new Uint8Array(wasmBinary);",
-    "if (wasmBinary) return new Uint8Array(wasmBinary);",
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    'return new URL("sqlite3.wasm", import.meta.url).href;',
-    'return "./sqlite3.wasm";',
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    'const W = new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));',
-    'const proxyUri = (globalThis?.location?.href || globalThis?.document?.currentScript?.src || "").replace(/[^/?#]+(?:[?#].*)?$/, "") + "sqlite3-opfs-async-proxy.js";\n\t\t\t\t\tconst W = new Worker(proxyUri);',
-    "index.mjs"
-  );
-  content = replaceExact(
-    content,
-    'installOpfsVfs.defaultProxyUri = "sqlite3-opfs-async-proxy.js";',
-    'installOpfsVfs.defaultProxyUri = "./sqlite3-opfs-async-proxy.js";',
-    "index.mjs"
-  );
-
-  writeUtf8(filePath, content);
-}
-
 function patchWorkerRuntimeMjs() {
   const filePath = path.join(targetDir, "sqlite3-worker1.mjs");
   let content = readUtf8(filePath);
 
+  // sqlite-wasm's worker is authored for modern module-worker loading via
+  // import.meta.url. We patch the vendored copy so our bootstrap files can pass
+  // explicit asset URLs, including Metro web's classic importScripts() path.
   content = replaceExact(
     content,
     "return new URL(path, import.meta.url).href;",
@@ -177,10 +121,6 @@ function main() {
   fs.mkdirSync(targetDir, { recursive: true });
 
   copyFile(
-    path.join(sourceDir, "index.mjs"),
-    path.join(targetDir, "index.mjs")
-  );
-  copyFile(
     path.join(sourceDir, "sqlite3-worker1.mjs"),
     path.join(targetDir, "sqlite3-worker1.mjs")
   );
@@ -193,24 +133,7 @@ function main() {
     path.join(targetDir, "sqlite3.wasm")
   );
 
-  patchIndexMjs();
   patchWorkerRuntimeMjs();
-
-  writeBase64Module(
-    path.join(targetDir, "sqlite3-worker1-base64.ts"),
-    "sqlite3Worker1Base64",
-    path.join(targetDir, "sqlite3-worker1.mjs")
-  );
-  writeBase64Module(
-    path.join(targetDir, "sqlite3-opfs-async-proxy-base64.ts"),
-    "sqlite3OpfsAsyncProxyBase64",
-    path.join(targetDir, "sqlite3-opfs-async-proxy.js")
-  );
-  writeBase64Module(
-    path.join(targetDir, "sqlite3-wasm-base64.ts"),
-    "sqlite3WasmBase64",
-    path.join(targetDir, "sqlite3.wasm")
-  );
 
   process.stdout.write(`Vendored sqlite-wasm from ${sourceDir}\n`);
 }
