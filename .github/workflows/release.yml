@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.12.0"
           cache: yarn
 
       - name: Enable Corepack
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.12.0"
           cache: yarn
 
       - name: Enable Corepack
@@ -104,7 +104,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.12.0"
           cache: yarn
 
       - name: Enable Corepack
@@ -131,7 +131,7 @@ jobs:
 
   build-windows:
     needs: validate
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -139,7 +139,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22.12.0"
           cache: yarn
 
       - name: Enable Corepack
@@ -150,6 +150,8 @@ jobs:
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
 
       - name: Generate codegen
         shell: powershell
@@ -162,7 +164,7 @@ jobs:
         shell: powershell
         working-directory: example
         run: |
-          npx @react-native-community/cli run-windows --no-deploy --no-launch
+          npx @react-native-community/cli run-windows --no-deploy --no-launch --msbuildprops WindowsTargetPlatformVersion=10.0.26100.0,TargetPlatformVersion=10.0.26100.0
 
   release:
     needs:

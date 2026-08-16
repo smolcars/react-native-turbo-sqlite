@@ -11,6 +11,7 @@ module.exports = {
        * @type {import("@react-native-community/cli-types").AndroidDependencyParams}
        */
       android: {
+        cmakeListsPath: "build/generated/source/codegen/jni/CMakeLists.txt",
         cxxModuleCMakeListsModuleName: "TurboSqlite",
         cxxModuleCMakeListsPath: `CMakeLists.txt`,
         cxxModuleHeaderName: "TurboSqliteModule",
