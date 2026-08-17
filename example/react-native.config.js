@@ -2,7 +2,10 @@ const path = require("path");
 const pak = require("../package.json");
 const ios = require("@react-native-community/cli-platform-ios");
 const android = require("@react-native-community/cli-platform-android");
-const reactNativeWindows = require("react-native-windows/react-native.config");
+const reactNativeWindows =
+  process.platform === "win32"
+    ? require("react-native-windows/react-native.config")
+    : null;
 
 module.exports = {
   dependencies: {
@@ -13,7 +16,7 @@ module.exports = {
   commands: [
     ...ios.commands,
     ...android.commands,
-    ...reactNativeWindows.commands,
+    ...(reactNativeWindows?.commands ?? []),
   ],
   platforms: {
     ios: {
@@ -24,6 +27,8 @@ module.exports = {
       projectConfig: android.projectConfig,
       dependencyConfig: android.dependencyConfig,
     },
-    windows: reactNativeWindows.platforms.windows,
+    ...(reactNativeWindows
+      ? { windows: reactNativeWindows.platforms.windows }
+      : {}),
   },
 };
