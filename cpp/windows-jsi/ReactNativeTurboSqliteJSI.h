@@ -15,75 +15,43 @@
 namespace facebook::react {
 
 
-  class JSI_EXPORT NativeTurboSqliteCxxSpecJSI : public TurboModule {
-protected:
-  NativeTurboSqliteCxxSpecJSI(std::shared_ptr<CallInvoker> jsInvoker);
-
-public:
-  virtual jsi::Object openDatabase(jsi::Runtime &rt, jsi::String path, std::optional<jsi::String> encryptionKey) = 0;
-  virtual jsi::Value openDatabaseAsync(jsi::Runtime &rt, jsi::String path, std::optional<jsi::String> encryptionKey) = 0;
-  virtual jsi::String getVersionString(jsi::Runtime &rt) = 0;
-
-};
-
 template <typename T>
 class JSI_EXPORT NativeTurboSqliteCxxSpec : public TurboModule {
 public:
-  jsi::Value create(jsi::Runtime &rt, const jsi::PropNameID &propName) override {
-    return delegate_.create(rt, propName);
-  }
-
-  std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime& runtime) override {
-    return delegate_.getPropertyNames(runtime);
-  }
-
   static constexpr std::string_view kModuleName = "TurboSqliteCxx";
 
 protected:
-  NativeTurboSqliteCxxSpec(std::shared_ptr<CallInvoker> jsInvoker)
-    : TurboModule(std::string{NativeTurboSqliteCxxSpec::kModuleName}, jsInvoker),
-      delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
-
-
+  NativeTurboSqliteCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativeTurboSqliteCxxSpec::kModuleName}, jsInvoker) {
+    methodMap_["openDatabase"] = MethodMetadata {.argCount = 2, .invoker = __openDatabase};
+    methodMap_["openDatabaseAsync"] = MethodMetadata {.argCount = 2, .invoker = __openDatabaseAsync};
+    methodMap_["getVersionString"] = MethodMetadata {.argCount = 0, .invoker = __getVersionString};
+  }
+  
 private:
-  class Delegate : public NativeTurboSqliteCxxSpecJSI {
-  public:
-    Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
-      NativeTurboSqliteCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
+  static jsi::Value __openDatabase(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::openDatabase) == 3,
+      "Expected openDatabase(...) to have 3 parameters");
+    return bridging::callFromJs<jsi::Object>(rt, &T::openDatabase,  static_cast<NativeTurboSqliteCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 || args[1].isUndefined() ? std::nullopt : std::make_optional(args[1].asString(rt)));
+  }
 
-    }
+  static jsi::Value __openDatabaseAsync(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::openDatabaseAsync) == 3,
+      "Expected openDatabaseAsync(...) to have 3 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::openDatabaseAsync,  static_cast<NativeTurboSqliteCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 || args[1].isUndefined() ? std::nullopt : std::make_optional(args[1].asString(rt)));
+  }
 
-    jsi::Object openDatabase(jsi::Runtime &rt, jsi::String path, std::optional<jsi::String> encryptionKey) override {
-      static_assert(
-          bridging::getParameterCount(&T::openDatabase) == 3,
-          "Expected openDatabase(...) to have 3 parameters");
-
-      return bridging::callFromJs<jsi::Object>(
-          rt, &T::openDatabase, jsInvoker_, instance_, std::move(path), std::move(encryptionKey));
-    }
-    jsi::Value openDatabaseAsync(jsi::Runtime &rt, jsi::String path, std::optional<jsi::String> encryptionKey) override {
-      static_assert(
-          bridging::getParameterCount(&T::openDatabaseAsync) == 3,
-          "Expected openDatabaseAsync(...) to have 3 parameters");
-
-      return bridging::callFromJs<jsi::Value>(
-          rt, &T::openDatabaseAsync, jsInvoker_, instance_, std::move(path), std::move(encryptionKey));
-    }
-    jsi::String getVersionString(jsi::Runtime &rt) override {
-      static_assert(
-          bridging::getParameterCount(&T::getVersionString) == 1,
-          "Expected getVersionString(...) to have 1 parameters");
-
-      return bridging::callFromJs<jsi::String>(
-          rt, &T::getVersionString, jsInvoker_, instance_);
-    }
-
-  private:
-    friend class NativeTurboSqliteCxxSpec;
-    T *instance_;
-  };
-
-  Delegate delegate_;
+  static jsi::Value __getVersionString(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* /*args*/, size_t /*count*/) {
+    static_assert(
+      bridging::getParameterCount(&T::getVersionString) == 1,
+      "Expected getVersionString(...) to have 1 parameters");
+    return bridging::callFromJs<jsi::String>(rt, &T::getVersionString,  static_cast<NativeTurboSqliteCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule));
+  }
 };
 
 } // namespace facebook::react

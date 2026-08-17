@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- This project was created with react-native-windows 0.82.0 -->
+<!-- This project was created with react-native-windows 0.84.0 -->
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)\ExperimentalFeatures.props" Condition="Exists('$(SolutionDir)\ExperimentalFeatures.props')" />
   <PropertyGroup Label="Globals">
@@ -66,7 +66,6 @@
     <UseSqlcipher Condition="'$(UseSqlcipherIsExplicit)' != 'true' and '$(SqlcipherConfigPackageJson)' != ''">1</UseSqlcipher>
     <SqlcipherModeName Condition="'$(UseSqlcipher)' == '1'">SQLCipher</SqlcipherModeName>
     <Linkage-OpenSSL Condition="'$(UseSqlcipher)' == '1'">dynamic</Linkage-OpenSSL>
-    <CopyLocalDeploymentContent Condition="'$(UseSqlcipher)' == '1'">true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <Import Project="$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.WindowsSdk.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -99,7 +98,7 @@
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
@@ -157,16 +156,12 @@
     <PackageReference Include="openssl-native" Version="3.5.5" />
   </ItemGroup>
   <ItemGroup Condition="'$(UseSqlcipher)' == '1'">
-    <ReferenceCopyLocalPaths Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)')" />
-    <ReferenceCopyLocalPaths Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)')" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(UseSqlcipher)' == '1'">
     <None Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)')">
-      <DeploymentContent>true</DeploymentContent>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>$(OpenSslRuntimeCryptoName)</Link>
     </None>
     <None Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)')">
-      <DeploymentContent>true</DeploymentContent>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>$(OpenSslRuntimeSslName)</Link>
     </None>
   </ItemGroup>
@@ -199,9 +194,6 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\cpp;$(MSBuildThisFileDirectory)..\..\cpp\sqlcipher;$(NuGetPackageRoot)openssl-native\3.5.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_STDINT_H=1;SQLITE_HAS_CODEC;SQLITE_TEMP_STORE=2;SQLITE_EXTRA_INIT=sqlcipher_extra_init;SQLITE_EXTRA_SHUTDOWN=sqlcipher_extra_shutdown;SQLCIPHER_CRYPTO_OPENSSL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\cpp\windows-jsi\ReactNativeTurboSqliteJSI-generated.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

@@ -47,9 +47,6 @@
     <ClCompile Include="..\..\cpp\sqlcipher\sqlite3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\cpp\windows-jsi\ReactNativeTurboSqliteJSI-generated.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
