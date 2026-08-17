@@ -149,4 +149,4 @@ jobs:
         shell: powershell
         working-directory: example
         run: |
-          npx @react-native-community/cli run-windows --no-deploy --no-launch --msbuildprops WindowsTargetPlatformVersion=10.0.26100.0,TargetPlatformVersion=10.0.26100.0
+          npx @react-native-community/cli run-windows --no-deploy --no-launch --msbuildprops "WindowsTargetPlatformVersion=10.0.26100.0,TargetPlatformVersion=10.0.26100.0"

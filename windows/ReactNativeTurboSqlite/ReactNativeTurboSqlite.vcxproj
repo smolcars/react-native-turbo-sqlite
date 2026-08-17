@@ -66,7 +66,6 @@
     <UseSqlcipher Condition="'$(UseSqlcipherIsExplicit)' != 'true' and '$(SqlcipherConfigPackageJson)' != ''">1</UseSqlcipher>
     <SqlcipherModeName Condition="'$(UseSqlcipher)' == '1'">SQLCipher</SqlcipherModeName>
     <Linkage-OpenSSL Condition="'$(UseSqlcipher)' == '1'">dynamic</Linkage-OpenSSL>
-    <CopyLocalDeploymentContent Condition="'$(UseSqlcipher)' == '1'">true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <Import Project="$(ReactNativeWindowsDir)\PropertySheets\External\Microsoft.ReactNative.WindowsSdk.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -157,20 +156,12 @@
     <PackageReference Include="openssl-native" Version="3.5.5" />
   </ItemGroup>
   <ItemGroup Condition="'$(UseSqlcipher)' == '1'">
-    <ReferenceCopyLocalPaths Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)')">
-      <DestinationSubDirectory>$(MSBuildProjectName)\</DestinationSubDirectory>
-    </ReferenceCopyLocalPaths>
-    <ReferenceCopyLocalPaths Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)')">
-      <DestinationSubDirectory>$(MSBuildProjectName)\</DestinationSubDirectory>
-    </ReferenceCopyLocalPaths>
-  </ItemGroup>
-  <ItemGroup Condition="'$(UseSqlcipher)' == '1'">
     <None Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeCryptoName)')">
-      <DeploymentContent>true</DeploymentContent>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>$(OpenSslRuntimeCryptoName)</Link>
     </None>
     <None Include="$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)" Condition="Exists('$(NuGetPackageRoot)openssl-native\3.5.5\runtimes\$(OpenSslRuntimeRid)\native\$(OpenSslRuntimeSslName)')">
-      <DeploymentContent>true</DeploymentContent>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>$(OpenSslRuntimeSslName)</Link>
     </None>
   </ItemGroup>
